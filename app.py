@@ -1,7 +1,3 @@
-#import libraries
-import requests
-import time
-import datetime
 import streamlit as st
 # Use the full page instead of a narrow central column
 st.set_page_config(layout="wide")
@@ -17,8 +13,8 @@ import matplotlib.pyplot as plt
 
 st.title("AMAZON stock price")
 stock = yf.Ticker("AMZN")
-#df_stock = stock.history(period="max")
-df_stock = yf.download("AMZN", start="2019-01-01", end="2020-10-30")
+df_stock = stock.history(period="max")
+#df_stock = yf.download("AMZN", start="2019-01-01", end="2020-10-30")
 
 
 col1, col2 = st.beta_columns(2)
