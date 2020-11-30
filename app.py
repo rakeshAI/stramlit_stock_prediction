@@ -77,29 +77,107 @@ if activity_choice == "NIFTY_50":
         threads = True,
         proxy = None
     )
-    #st.write(data)
+    #st.write(data["NTPC.NS"].Close)
 
     # Plot Closing Price of Query Symbol
     def price_plot(symbol):
         df = pd.DataFrame(data[symbol].Close)
         df['Date'] = df.index
         fig = plt.figure()
-        plt.fill_between(df.Date, df.Close, color='skyblue', alpha=0.3)
+        #plt.fill_between(df.Date, df.Close, color='skyblue', alpha=0.3)
         plt.plot(df.Date, df.Close, color='skyblue', alpha=0.8)
-        plt.xticks(rotation=90)
+        plt.xticks(rotation=45)
         plt.title(symbol, fontweight='bold')
         plt.xlabel('Date', fontweight='bold')
         plt.ylabel('Closing Price', fontweight='bold')
         return st.pyplot(fig)
 
-    num_company = st.sidebar.slider('Number of Companies', 1, 5)
+    #num_company = st.sidebar.slider('Number of Companies', 1, 5)
     #num_company = 50
 
-    if st.button('Show Plots'):
-        st.header('Stock Closing Price')
-        for i in list(df_selected_sector.Symbol)[:num_company]:
-            price_plot(i)
+    #if st.button('Show close price'):
+    #    st.header('Stock Closing Price')
+    #    for i in list(df_selected_sector.Symbol)[:-1]:
+    #        price_plot(i)
 
+
+
+
+    def buy_sell(signal):
+        Buy = []
+        Sell = []
+        flag = -1
+
+        for i in range(0, len(signal)):
+            if signal['MACD'][i] > signal['Signal line'][i]:
+                Sell.append(np.nan)
+                if flag != 1:
+                    Buy.append(signal['Close'][i])
+                    flag = 1
+                else:
+                    Buy.append(np.nan)
+            elif signal['MACD'][i] < signal['Signal line'][i]:
+                Buy.append(np.nan)
+                if flag != 0:
+                    Sell.append(signal['Close'][i])
+                    flag = 0
+                else:
+                    Sell.append(np.nan)
+            else:
+                Buy.append(np.nan)
+                Sell.append(np.nan)
+        return (Buy, Sell)
+
+
+
+    
+    def MACD(symbol):
+        st.header(symbol)
+        df = pd.DataFrame(data[symbol].Close)
+        df['Date'] = df.index
+        #st.write(df)
+        # calculate the MACD and signal line indicators
+        # calculate the short term exponential moving average
+        ShortEMA = df.Close.ewm(span=12, adjust=False).mean()
+        #st.write(ShortEMA)
+        # calculate the long term exponential moving average
+        LongEMA = df.Close.ewm(span=26, adjust=False).mean()
+        # calculate the MACD line
+        MACD = ShortEMA - LongEMA
+        # calculate the singnal line
+        signal = MACD.ewm(span=9, adjust=False).mean()
+
+        #fig = plt.figure()
+        #plt.plot(df.index, MACD, label='MACD', color='red')
+        #plt.plot(df.index, signal, label='Signal Line', color='blue')
+        #plt.xticks(rotation = 45)
+        #plt.legend(loc='upper left')
+
+        df['MACD'] = MACD
+        df['Signal line'] = signal
+
+        a = buy_sell(df)
+        df['Buy_Signal_Price'] = a[0]
+        df['Sell_Signal_Price'] = a[1]
+        st.write(df)
+        
+        fig = plt.figure()
+        plt.scatter(df.index, df['Buy_Signal_Price'], color='green', label='Buy', marker='^', alpha=1)
+        plt.scatter(df.index, df['Sell_Signal_Price'], color='red', label='Sell', marker='v', alpha=1)
+        plt.plot(df['Close'], label='Close Price', alpha=0.50)
+        plt.plot(df.index, MACD, label='MACD', color='red', alpha=0.35)
+        plt.plot(df.index, signal, label='Signal Line', color='black', alpha=0.35)
+        plt.title('CLose Price Buy & Sell Signals')
+        plt.xticks(rotation = 45)
+        plt.xlabel('Date')
+        plt.ylabel('Close Price')
+        plt.legend(loc = 'upper left')
+        return st.pyplot(fig)     
+
+    if st.button('Show MACD graph'):
+        st.header('MACD stock closing price')
+        for i in list(df_selected_sector.Symbol)[:-1]:
+            MACD(i)
 
 
 else:
