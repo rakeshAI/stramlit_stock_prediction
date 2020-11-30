@@ -171,7 +171,7 @@ if activity_choice == "NIFTY_50":
         plt.xticks(rotation = 45)
         plt.xlabel('Date')
         plt.ylabel('Close Price')
-        plt.legend(loc = 'upper left')
+        plt.legend(loc = 'best')
         return st.pyplot(fig)     
 
     if st.button('Show MACD graph'):
