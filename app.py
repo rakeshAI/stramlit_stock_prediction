@@ -16,16 +16,14 @@ import base64
 Activity = ["NIFTY_50", "Single stock"]
 activity_choice = st.sidebar.selectbox("Select Activity", Activity)
 if activity_choice == "NIFTY_50":
-    st.markdown(
+    if st.checkbox('Data source'):
+        st.markdown(
+            """
+        This app retrieves the list of the **NSE** (from Wikipedia) and its corresponding **stock closing price** (year-to-date)!
+        * **Data source:** [Wikipedia](https://en.wikipedia.org/wiki/List_of_companies_listed_on_the_National_Stock_Exchange_of_India).
         """
-    This app retrieves the list of the **NSE** (from Wikipedia) and its corresponding **stock closing price** (year-to-date)!
-    * **Data source:** [Wikipedia](https://en.wikipedia.org/wiki/List_of_companies_listed_on_the_National_Stock_Exchange_of_India).
-    """
-    )
-
-    st.sidebar.header("User Input Features")
-
-    # Web scraping of S&P 500 data
+        )
+        # Web scraping of NIFTY_50  data
     #
     @st.cache
     def load_data():
@@ -35,8 +33,9 @@ if activity_choice == "NIFTY_50":
         return df
 
     df = load_data()
-    # st.write(df)
 
+
+    st.sidebar.header("User Input Features")
     sector = df.groupby("Sector")
 
     # Sidebar - Sector selection
@@ -47,25 +46,25 @@ if activity_choice == "NIFTY_50":
 
     # Filtering data
     df_selected_sector = df[(df["Sector"].isin(selected_sector))]
+    if st.checkbox("Display Companies in Selected Sector"):
+        st.header("Display Companies in Selected Sector")
+        st.write(
+            "Data Dimension: "
+            + str(df_selected_sector.shape[0])
+            + " rows and "
+            + str(df_selected_sector.shape[1])
+            + " columns."
+        )
+        st.dataframe(df_selected_sector)
 
-    st.header("Display Companies in Selected Sector")
-    st.write(
-        "Data Dimension: "
-        + str(df_selected_sector.shape[0])
-        + " rows and "
-        + str(df_selected_sector.shape[1])
-        + " columns."
-    )
-    st.dataframe(df_selected_sector)
+        # download NIFTY_50 data
+        def filedownload(df):
+            csv = df.to_csv(index=False)
+            b64 = base64.b64encode(csv.encode()).decode()  # strings <-> bytes conversions
+            href = f'<a href="data:file/csv;base64,{b64}" download="nifty50.csv">Download CSV File</a>'
+            return href
 
-    # download NIFTY_50 data
-    def filedownload(df):
-        csv = df.to_csv(index=False)
-        b64 = base64.b64encode(csv.encode()).decode()  # strings <-> bytes conversions
-        href = f'<a href="data:file/csv;base64,{b64}" download="nifty50.csv">Download CSV File</a>'
-        return href
-
-    st.markdown(filedownload(df_selected_sector), unsafe_allow_html=True)
+        st.markdown(filedownload(df_selected_sector), unsafe_allow_html=True)
 
     data = yf.download(
         tickers = list(df_selected_sector[:].Symbol),
@@ -159,8 +158,8 @@ if activity_choice == "NIFTY_50":
         a = buy_sell(df)
         df['Buy_Signal_Price'] = a[0]
         df['Sell_Signal_Price'] = a[1]
-        st.write(df)
-        
+        #st.write(df)
+               
         fig = plt.figure()
         plt.scatter(df.index, df['Buy_Signal_Price'], color='green', label='Buy', marker='^', alpha=1)
         plt.scatter(df.index, df['Sell_Signal_Price'], color='red', label='Sell', marker='v', alpha=1)
@@ -174,10 +173,14 @@ if activity_choice == "NIFTY_50":
         plt.legend(loc = 'best')
         return st.pyplot(fig)     
 
-    if st.button('Show MACD graph'):
-        st.header('MACD stock closing price')
-        for i in list(df_selected_sector.Symbol)[:-1]:
-            MACD(i)
+    #if not st.checkbox('Show MACD graph'):
+    #    st.header('MACD stock closing price')
+    #    for i in list(df_selected_sector.Symbol)[:-1]:
+    #        MACD(i)
+
+    st.header("MACD stock closing price")
+    for i in list(df_selected_sector.Symbol)[:-1]:
+        MACD(i)
 
 
 else:
